@@ -19,14 +19,16 @@ Steps for Tsai Calibration:
 
 type CameraParams = {pixelSize: double; width: int; height: int; cx0: int; cy0: int}
 
+type CalibrationPoint = {xw: int; yw: int; zw: int; cx: int; cy: int}
+
+type Distortedcoords = {xd: double; yd: double}
+
 let extractCameraParams cameraparamsfile = 
     match System.IO.Path.GetExtension(cameraparamsfile) with
     | ".csv" ->
         let rawLines = File.ReadAllLines(cameraparamsfile)
         {pixelSize = System.Double.Parse(rawLines.[0]); width = 640; height = 480; cx0 = 320; cy0 = 240}
     | _ -> failwith "invalid file type provided"
-
-type CalibrationPoint = {xw: int; yw: int; zw: int; cx: int; cy: int}
 
 let extractCalibrationPoints calibpointsfile = 
     match System.IO.Path.GetExtension(calibpointsfile) with
@@ -44,8 +46,6 @@ let openAndLoadFiles cameraparamsfilename calibrationpointsfilename =
     let calibrationpoints = extractCalibrationPoints calibrationpointsfilename
     (cameraparams, calibrationpoints)
 
-type Distortedcoords = {xd: double; yd: double}
-
 let getdistortedcoords cameraparams calibrationpoints = 
     [|for calibpoint in calibrationpoints do
         yield {xd = cameraparams.pixelSize * double (calibpoint.cx - cameraparams.cx0); 
@@ -54,7 +54,7 @@ let getdistortedcoords cameraparams calibrationpoints =
 
 let determineL cameraparams (calibrationpoints : CalibrationPoint[]) (distortedcoords : Distortedcoords[]) = 
     let n = calibrationpoints.Length
-    let xds = Vector<double>.Build.DenseOfArray [| for i in 0 .. (n - 1) do yield distortedcoords.[n].xd |]
+    let xds = Vector<double>.Build.DenseOfArray [| for dc in distortedcoords do yield dc.xd |]
     //let yds = Vector<double>.Build.Dense n
     
     let mArr = [| for i in 0 .. (n - 1) do
