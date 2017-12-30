@@ -1,9 +1,14 @@
 ﻿open System.IO
 open MathNet.Numerics.LinearAlgebra
 open FSharp.Data
+open Datatypes
+open Projections
 
 // Learn more about F# at http://fsharp.org
 // See the 'F# Tutorial' project for more help.
+
+// It must be pointed out immediately, that a in few places in this code reliance is made upon the idea that entries is separate arrays will match each other
+// in terms of relations to the calibration points, on the basis of (in theory) having the same position in each array.
 
 (*
 Steps for Tsai Calibration:
@@ -17,11 +22,7 @@ Steps for Tsai Calibration:
 
 //exception FileExtensionNotValid of string
 
-type CameraParams = {pixelSize: double; width: int; height: int; cx0: int; cy0: int}
 
-type CalibrationPoint = {xw: int; yw: int; zw: int; cx: int; cy: int}
-
-type Distortedcoords = {xd: double; yd: double}
 
 let extractCameraParams cameraparamsfile = 
     match System.IO.Path.GetExtension(cameraparamsfile) with
@@ -77,8 +78,9 @@ let findDistanceFromCentre cameraParams calibrationPoint =
 let findSignOfTy cameraParams calibrationPoints (L : Vector<double>) absTy = 
     //let distancesFromCentre = Array.map (fun x -> sqrt (double (x.cx - cameraParams.cx0) ** 2.0 +
     //                                                double (x.cy - cameraParams.cy0) ** 2.0)) calibrationPoints |> Array.zip calibrationPoints
-    let distancesFromCentre = Array.map (findDistanceFromCentre cameraParams) calibrationPoints |> Array.zip calibrationPoints
-    let furthestPoint = Array.maxBy snd distancesFromCentre |> fst
+    //let distancesFromCentre = Array.map (findDistanceFromCentre cameraParams) calibrationPoints |> Array.zip calibrationPoints
+    //let furthestPoint = Array.maxBy snd distancesFromCentre |> fst
+    let furthestPoint = Array.map (findDistanceFromCentre cameraParams) calibrationPoints |> Array.zip calibrationPoints |> Array.maxBy snd |> fst
     let r11 = L.[0] * absTy
     let r12 = L.[1] * absTy
     let r13 = L.[2] * absTy
@@ -141,5 +143,7 @@ let main argv =
     T.Value.[1] <- findSignOfTy cameraparams calibrationpoints L absTy // find final value of Ty
     populateRandT L sx R T
     let f = calculateFandTz calibrationpoints distortedcoords R T
+    let calculatedparams = {R = R.Value; T = T.Value; f = f; kappa1 = 0.0}
+    //let optimisedparams = optimiseparameters calculatedparams calibrationpoints
     //printfn "%A" argv
     0 // return an integer exit code
