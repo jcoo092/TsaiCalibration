@@ -4,6 +4,7 @@ open Datatypes
 open MathNet.Numerics.Optimization
 
 // Forward projection - world to image plane
+// Currently not using any form of distortion estimate...
 
 let worldToCameraTransform calculatedparams calibrationpoint = 
     let worldVec = Vector<double>.Build.DenseOfArray([|double calibrationpoint.xw; double calibrationpoint.yw; double calibrationpoint.zw|])
@@ -37,7 +38,14 @@ let calculateProjectionErrorsSSD calculatedparams calibrationpoints =
 
 // back projection - image plane to world
 
+let findCameraOriginInWorld calculatedparams = 
+    let invR = calculatedparams.R.Inverse()
+    -1.0 * invR.Multiply(calculatedparams.T)
 
+let findBackProjectionVector calculatedparams imagepoint = 
+    let invR = calculatedparams.R.Inverse()
+    let pointVector = Vector.Build.Dense([|imagepoint.u; imagepoint.v; imagepoint.f|])
+    invR.Multiply(pointVector)
 
 // Optimisation - just sticking this here for the time being
 // http://www.imagingshop.com/linear-and-nonlinear-least-squares-with-math-net/ seems to have a reasonably good write up of

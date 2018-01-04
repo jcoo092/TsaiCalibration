@@ -144,6 +144,7 @@ let main argv =
     populateRandT L sx R T
     let f = calculateFandTz calibrationpoints distortedcoords R T
     let calculatedparams = {R = R.Value; T = T.Value; f = f; kappa1 = 0.0}
+    //let cameraOrigin = findCameraOriginInWorld calculatedparams
     //let optimisedparams = optimiseparameters calculatedparams calibrationpoints
     //printfn "%A" argv
     0 // return an integer exit code
